@@ -992,6 +992,20 @@ func (v *vaultClient) CreateToken(ctx context.Context, a *structs.Allocation, ta
 		namespaceForTask = taskVault.Namespace
 	}
 
+	// Set entity alias if given
+	entityAlias := ""
+
+	// If set in the server config, use an entity_alias
+	if v.config.EntityAlias != "" {
+		entityAlias = taskVault.EntityAlias
+	}
+
+	// If set at the task level, use the task-specific alias
+	// even if the server config has an entity_alias as well
+	if taskVault.EntityAlias != "" {
+		entityAlias = taskVault.EntityAlias
+	}
+
 	// Build the creation request
 	req := &vapi.TokenCreateRequest{
 		Policies: taskVault.Policies,
@@ -1003,6 +1017,7 @@ func (v *vaultClient) CreateToken(ctx context.Context, a *structs.Allocation, ta
 		},
 		TTL:         v.childTTL,
 		DisplayName: fmt.Sprintf("%s-%s", a.ID, task),
+		EntityAlias: entityAlias,
 	}
 
 	// Ensure we are under our rate limit
